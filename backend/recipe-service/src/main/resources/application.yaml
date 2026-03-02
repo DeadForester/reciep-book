@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: recipe-service
+  data:
+    mongodb:
+      uri: mongodb://admin:admin@localhost:27018/recipe_db?authSource=admin
+
+app:
+  minio:
+    url: http://localhost:9000
+    accesskey: bestuser
+    secretKey: bestuser
+    bucket: recipe-image
+
+server:
+  port: 8080
+

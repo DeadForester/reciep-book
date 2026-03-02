@@ -1,0 +1,24 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ],
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["src/*"],
+      "@views/*": ["src/views/*"]
+    },
+    "types": [
+      "vite/client",
+      "vue/macros-global"
+    ]
+  }
+}
+
+
