@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  BACKEND_DIR: backend/recipe-service
+  FRONTEND_DIR: frontend/recipe
+
+jobs:
+  backend-build-and-test:
+    name: Backend - Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: admin
+          MONGO_INITDB_DATABASE: recipe_db
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      minio:
+        image: minio/minio:latest
+        ports:
+          - 9000:9000
+          - 9001:9001
+        env:
+          MINIO_ROOT_USER: bestuser
+          MINIO_ROOT_PASSWORD: bestuser
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build backend
+        run: mvn clean compile -DskipTests
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Run backend tests
+        run: mvn test
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Backend Tests
+          path: ${{ env.BACKEND_DIR }}/target/surefire-reports/*.xml
+          reporter: java-junit
+
+  frontend-build-and-test:
+    name: Frontend - Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.FRONTEND_DIR }}/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Type check
+        run: npm run type-check
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Build frontend
+        run: npm run build-only
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Run frontend tests
+        run: npm run test -- --run
+        working-directory: ${{ env.FRONTEND_DIR }}
