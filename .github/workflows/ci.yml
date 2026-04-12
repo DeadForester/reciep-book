@@ -39,13 +39,10 @@ jobs:
           MINIO_ROOT_USER: bestuser
           MINIO_ROOT_PASSWORD: bestuser
         options: >-
-          --health-cmd "mc ready local || exit 1"
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:9000/minio/health/live || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-          --entrypoint "minio"
-        volumes:
-          - /tmp/minio-data:/data
 
     steps:
       - name: Checkout repository
@@ -73,14 +70,6 @@ jobs:
       - name: Run backend tests
         run: mvn test
         working-directory: ${{ env.BACKEND_DIR }}
-
-      - name: Publish test results
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: Backend Tests
-          path: ${{ env.BACKEND_DIR }}/target/surefire-reports/*.xml
-          reporter: java-junit
 
   frontend-build-and-test:
     name: Frontend - Build & Test
