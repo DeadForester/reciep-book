@@ -9,14 +9,16 @@ const goHome = () => {
 </script>
 
 <template>
-  <div class="min-h-screen p-8">
-    <h1
-        class="text-4xl font-bold text-center mb-10 cursor-pointer transition hover:opacity-80"
-        @click="goHome"
-    >
-      🍲 Recipe Manager
-    </h1>
+  <div class="min-h-screen">
+    <header class="app-header">
+      <div class="app-logo" @click="goHome">🍲 Книга Рецептов</div>
+      <router-link to="/create" class="app-nav-btn">
+        <span>＋</span> Новый рецепт
+      </router-link>
+    </header>
 
-    <router-view />
+    <main class="page-container">
+      <router-view />
+    </main>
   </div>
 </template>

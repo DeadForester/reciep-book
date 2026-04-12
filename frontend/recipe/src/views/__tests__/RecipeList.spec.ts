@@ -44,7 +44,7 @@ describe('RecipeList', () => {
         expect(await screen.findByText('Burger')).toBeInTheDocument()
     })
 
-    it('shows "Add Recipe" button', async () => {
+    it('shows create recipe button', async () => {
         render(RecipeList, {
             global: {
                 plugins: [router],
@@ -52,6 +52,6 @@ describe('RecipeList', () => {
             }
         })
 
-        expect(screen.getByText('+ Добавить рецепт')).toBeInTheDocument()
+        expect(screen.getByText(/Создать первый рецепт/)).toBeInTheDocument()
     })
 })

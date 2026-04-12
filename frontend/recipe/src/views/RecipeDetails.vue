@@ -38,7 +38,7 @@ const removeRecipe = async () => {
 }
 
 const difficultyLabel = (d: string) => {
-  const map: Record<string, string> = { EASY: "Лёгкий", MEDIUM: "Средний", HARD: "Сложный" }
+  const map: Record<string, string> = { EASY: "🟢 Лёгкий", MEDIUM: "🟡 Средний", HARD: "🔴 Сложный" }
   return map[d] || d
 }
 
@@ -47,107 +47,106 @@ onMounted(loadRecipe)
 
 <template>
   <div>
-    <div v-if="loading" class="text-center mt-10">
-      Загрузка...
+    <!-- Loading -->
+    <div v-if="loading" class="loading">
+      <div class="loading__spinner" />
+      <div>Загружаем рецепт…</div>
     </div>
 
-    <div v-else-if="error" class="text-center mt-10 text-red-400">
-      {{ error }}
-      <button class="btn btn-ghost ml-4" @click="loadRecipe">
+    <!-- Error -->
+    <div v-else-if="error" class="alert alert--error" style="max-width: 720px; margin: 48px auto;">
+      <span>⚠️</span>
+      <span>{{ error }}</span>
+      <button class="btn btn--ghost btn--sm" style="margin-left: auto;" @click="loadRecipe">
         Повторить
       </button>
     </div>
 
-    <div
-        v-else-if="recipe"
-        class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-lg"
-    >
-      <img
-          v-if="recipe.imageUrl"
-          :src="recipe.imageUrl"
-          :alt="recipe.title"
-          class="max-h-96 mx-auto rounded-xl mb-6 w-full object-cover"
-      />
-
-      <h1 class="text-3xl font-bold mb-6 text-center">
-        {{ recipe.title }}
-      </h1>
-
-      <h3 class="text-xl font-bold mb-3">
-        Ингредиенты:
-      </h3>
-
-      <ul class="mb-6 list-disc list-inside space-y-1">
-        <li v-for="(ing, index) in recipe.ingredients" :key="index">
-          {{ ing }}
-        </li>
-      </ul>
-
-      <h3 class="text-xl font-bold mb-3">
-        Шаги приготовления:
-      </h3>
-
-      <ol class="mb-6 list-decimal list-inside space-y-2">
-        <li v-for="(step, index) in recipe.steps" :key="index" class="leading-relaxed">
-          {{ step }}
-        </li>
-      </ol>
-
-      <div class="flex gap-6 mb-6 text-sm opacity-80">
-        <span>⏱ {{ recipe.cookingTimeMinutes }} мин</span>
-        <span>📊 {{ difficultyLabel(recipe.difficulty) }}</span>
+    <!-- Recipe detail -->
+    <div v-else-if="recipe" class="page-container page-container--medium">
+      <!-- Hero image -->
+      <div class="detail-hero">
+        <img
+            v-if="recipe.imageUrl"
+            :src="recipe.imageUrl"
+            :alt="recipe.title"
+            class="detail-hero__image"
+        />
+        <div v-else class="detail-hero__placeholder">🍽️</div>
       </div>
 
-      <h3 class="text-xl font-bold mb-3">
-        Описание:
-      </h3>
+      <!-- Title -->
+      <h1 class="detail-title">{{ recipe.title }}</h1>
 
-      <p class="mb-8 leading-relaxed">
-        {{ recipe.description }}
-      </p>
+      <!-- Badges -->
+      <div class="detail-badges">
+        <span class="detail-badge" v-if="recipe.cookingTimeMinutes">
+          ⏱ {{ recipe.cookingTimeMinutes }} мин
+        </span>
+        <span class="detail-badge" v-if="recipe.difficulty">
+          {{ difficultyLabel(recipe.difficulty) }}
+        </span>
+        <span class="detail-badge">
+          🥘 {{ recipe.ingredients?.length || 0 }} ингредиентов
+        </span>
+        <span class="detail-badge">
+          📝 {{ recipe.steps?.length || 0 }} шагов
+        </span>
+      </div>
 
-      <div class="flex gap-4 justify-between flex-wrap">
-        <button
-            class="btn btn-ghost"
-            @click="router.push('/')"
-        >
-          Назад
+      <!-- Ingredients -->
+      <div class="detail-section">
+        <div class="detail-section__title">Ингредиенты</div>
+        <ul class="detail-ingredients">
+          <li v-for="(ing, index) in recipe.ingredients" :key="index">
+            {{ ing }}
+          </li>
+        </ul>
+      </div>
+
+      <!-- Steps -->
+      <div class="detail-section">
+        <div class="detail-section__title">Шаги приготовления</div>
+        <ol class="detail-steps">
+          <li v-for="(step, index) in recipe.steps" :key="index">
+            {{ step }}
+          </li>
+        </ol>
+      </div>
+
+      <!-- Description -->
+      <div class="detail-section">
+        <div class="detail-section__title">Описание</div>
+        <p class="detail-description">{{ recipe.description }}</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="detail-actions">
+        <button class="btn btn--ghost" @click="router.push('/')">
+          ← Назад к списку
         </button>
 
-        <div class="flex gap-4">
-          <button
-              class="btn btn-primary"
-              @click="router.push(`/edit/${recipe.id}`)"
-          >
-            Редактировать
+        <div class="detail-actions__right">
+          <button class="btn btn--primary" @click="router.push(`/edit/${recipe.id}`)">
+            ✏️ Редактировать
           </button>
-
-          <button
-              class="btn btn-danger"
-              @click="showDeleteModal = true"
-          >
-            Удалить
+          <button class="btn btn--danger" @click="showDeleteModal = true">
+            🗑 Удалить
           </button>
         </div>
       </div>
 
+      <!-- Delete modal -->
       <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
         <div class="modal">
-          <h3>Удалить рецепт?</h3>
-          <p>Это действие нельзя отменить.</p>
-
-          <div class="modal-actions">
-            <button
-                class="btn btn-ghost"
-                @click="showDeleteModal = false"
-            >
+          <div class="modal__icon">🗑️</div>
+          <h3 class="modal__title">Удалить рецепт?</h3>
+          <p class="modal__desc">Это действие нельзя отменить.</p>
+          <div class="modal__actions">
+            <button class="btn btn--ghost" @click="showDeleteModal = false">
               Отмена
             </button>
-
-            <button
-                class="btn btn-danger"
-                @click="removeRecipe"
-            >
+            <button class="btn btn--danger" @click="removeRecipe">
               Удалить
             </button>
           </div>

@@ -46,75 +46,84 @@ onMounted(loadRecipes)
 
 <template>
   <div>
-    <div v-if="loading" class="text-center mb-6">
-      Загрузка...
+    <!-- Loading -->
+    <div v-if="loading" class="loading">
+      <div class="loading__spinner" />
+      <div>Загружаем рецепты…</div>
     </div>
 
-    <div v-else-if="error" class="text-center mb-6 text-red-400">
-      {{ error }}
-      <button class="btn btn-ghost ml-4" @click="loadRecipes">
+    <!-- Error -->
+    <div v-else-if="error" class="alert alert--error">
+      <span>⚠️</span>
+      <span>{{ error }}</span>
+      <button class="btn btn--ghost btn--sm" style="margin-left: auto;" @click="loadRecipes">
         Повторить
       </button>
     </div>
 
-    <div v-else-if="recipes.length === 0" class="text-center mb-6 opacity-70">
-      Рецептов пока нет. Создайте первый!
+    <!-- Empty state -->
+    <div v-else-if="recipes.length === 0" class="empty-state">
+      <span class="empty-state__icon">📖</span>
+      <div class="empty-state__text">Рецептов пока нет</div>
+      <button class="btn btn--primary btn--lg" @click="router.push('/create')">
+        ＋ Создать первый рецепт
+      </button>
     </div>
 
-    <!-- СЕТКА -->
-    <div v-else class="grid md:grid-cols-3 gap-6">
+    <!-- Recipe grid -->
+    <div v-else class="recipe-grid">
       <div
           v-for="recipe in recipes"
           :key="recipe.id"
-          class="bg-white/10 p-6 rounded-xl backdrop-blur-md transition hover:-translate-y-1 hover:shadow-xl"
+          class="recipe-card"
+          @click="router.push(`/recipe/${recipe.id}`)"
       >
-        <img
-            v-if="recipe.imageUrl"
-            :src="recipe.imageUrl"
-            :alt="recipe.title"
-            class="recipe-image rounded-lg mb-4 w-full object-cover"
-        />
+        <div class="recipe-card__image-wrapper">
+          <img
+              v-if="recipe.imageUrl"
+              :src="recipe.imageUrl"
+              :alt="recipe.title"
+              class="recipe-card__image"
+          />
+          <div v-else class="recipe-card__placeholder">🍽️</div>
+        </div>
 
-        <h2
-            class="recipe-title cursor-pointer"
-            @click="router.push(`/recipe/${recipe.id}`)"
-        >
-          {{ recipe.title }}
-        </h2>
+        <div class="recipe-card__body">
+          <h2 class="recipe-card__title">{{ recipe.title }}</h2>
+          <p class="recipe-card__desc">{{ recipe.description }}</p>
 
-        <p class="mt-2 text-sm opacity-70 line-clamp-2">
-          {{ recipe.description }}
-        </p>
+          <div class="recipe-card__meta">
+            <span v-if="recipe.cookingTimeMinutes">⏱ {{ recipe.cookingTimeMinutes }} мин</span>
+            <span v-if="recipe.difficulty">
+              {{ recipe.difficulty === 'EASY' ? '🟢 Лёгкий' : recipe.difficulty === 'MEDIUM' ? '🟡 Средний' : '🔴 Сложный' }}
+            </span>
+            <span>🥘 {{ recipe.ingredients?.length || 0 }} ингред.</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="text-center mt-10">
-      <button
-          class="btn btn-primary"
-          @click="router.push('/create')"
-      >
-        + Добавить рецепт
-      </button>
-    </div>
-
-    <div class="flex justify-center gap-6 mt-8">
-
+    <!-- Pagination -->
+    <div v-if="!loading && !error && recipes.length > 0" class="pagination">
       <button
           v-if="page > 0"
-          class="btn btn-ghost"
+          class="btn btn--ghost"
           @click="prevPage"
       >
-        ← Предыдущая
+        ← Назад
       </button>
+
+      <span style="color: rgba(226,232,240,0.4); font-size: 14px;">
+        Страница {{ page + 1 }} из {{ totalPages }}
+      </span>
 
       <button
           v-if="page < totalPages - 1"
-          class="btn btn-ghost"
+          class="btn btn--ghost"
           @click="nextPage"
       >
-        Следующая →
+        Вперёд →
       </button>
-
     </div>
   </div>
 </template>

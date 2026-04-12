@@ -45,19 +45,19 @@ describe("RecipeForm", () => {
         })
 
         expect(
-            screen.getByRole("heading", { name: /создать рецепт/i })
+            screen.getByRole("heading", { name: /Новый рецепт/i })
         ).toBeInTheDocument()
 
         expect(
-            screen.getByPlaceholderText("Название рецепта")
+            screen.getByPlaceholderText(/Борщ/)
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText("+ Добавить ингредиент")
+            screen.getByText(/Добавить ингредиент/)
         ).toBeInTheDocument()
 
         expect(
-            screen.getByText("+ Добавить шаг")
+            screen.getByText(/Добавить шаг/)
         ).toBeInTheDocument()
     })
 
@@ -72,10 +72,10 @@ describe("RecipeForm", () => {
         })
 
         expect(
-            await screen.findByRole("heading", { name: /редактировать рецепт/i })
+            await screen.findByRole("heading", { name: /Редактировать/i })
         ).toBeInTheDocument()
 
-        const titleInput = await screen.findByPlaceholderText("Название рецепта") as HTMLInputElement
+        const titleInput = await screen.findByPlaceholderText(/Борщ/) as HTMLInputElement
         expect(titleInput.value).toBe("Existing Recipe")
     })
 })
