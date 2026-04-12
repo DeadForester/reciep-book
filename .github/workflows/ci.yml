@@ -39,10 +39,13 @@ jobs:
           MINIO_ROOT_USER: bestuser
           MINIO_ROOT_PASSWORD: bestuser
         options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-cmd "mc ready local || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+          --entrypoint "minio"
+        volumes:
+          - /tmp/minio-data:/data
 
     steps:
       - name: Checkout repository
