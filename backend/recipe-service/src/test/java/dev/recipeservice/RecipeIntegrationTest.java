@@ -49,12 +49,12 @@ class RecipeIntegrationTest {
                 "Pizza",
                 "Italian pizza",
                 List.of("Flour"),
-                List.of("Bake"),
-                30,
-                Difficulty.MEDIUM
+                null,
+                null,
+                null
         );
 
-        String response = mockMvc.perform(post("/api/v1/recipes")
+        String response = mockMvc.perform(post("/api/recipes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -62,13 +62,13 @@ class RecipeIntegrationTest {
                 .getResponse()
                 .getContentAsString();
 
-        mockMvc.perform(get("/api/v1/recipes?page=0&size=10"))
+        mockMvc.perform(get("/api/recipes?page=0&size=10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].title").value("Pizza"));
 
         String id = objectMapper.readTree(response).get("id").asText();
 
-        mockMvc.perform(delete("/api/v1/recipes/" + id))
+        mockMvc.perform(delete("/api/recipes/" + id))
                 .andExpect(status().isNoContent());
     }
 }

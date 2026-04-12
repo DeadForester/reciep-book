@@ -10,13 +10,18 @@ const recipes = ref<Recipe[]>([])
 const page = ref(0)
 const totalPages = ref(0)
 const loading = ref(false)
+const error = ref<string | null>(null)
 
 const loadRecipes = async () => {
   loading.value = true
+  error.value = null
   try {
     const data = await recipeService.getAll(page.value)
     recipes.value = data.content
     totalPages.value = data.totalPages
+  } catch (e) {
+    error.value = "Не удалось загрузить рецепты. Попробуйте позже."
+    console.error(e)
   } finally {
     loading.value = false
   }
@@ -45,8 +50,19 @@ onMounted(loadRecipes)
       Загрузка...
     </div>
 
+    <div v-else-if="error" class="text-center mb-6 text-red-400">
+      {{ error }}
+      <button class="btn btn-ghost ml-4" @click="loadRecipes">
+        Повторить
+      </button>
+    </div>
+
+    <div v-else-if="recipes.length === 0" class="text-center mb-6 opacity-70">
+      Рецептов пока нет. Создайте первый!
+    </div>
+
     <!-- СЕТКА -->
-    <div class="grid md:grid-cols-3 gap-6">
+    <div v-else class="grid md:grid-cols-3 gap-6">
       <div
           v-for="recipe in recipes"
           :key="recipe.id"
@@ -55,15 +71,20 @@ onMounted(loadRecipes)
         <img
             v-if="recipe.imageUrl"
             :src="recipe.imageUrl"
-            class="recipe-image"
+            :alt="recipe.title"
+            class="recipe-image rounded-lg mb-4 w-full object-cover"
         />
 
         <h2
-            class="recipe-title"
+            class="recipe-title cursor-pointer"
             @click="router.push(`/recipe/${recipe.id}`)"
         >
           {{ recipe.title }}
         </h2>
+
+        <p class="mt-2 text-sm opacity-70 line-clamp-2">
+          {{ recipe.description }}
+        </p>
       </div>
     </div>
 

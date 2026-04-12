@@ -4,18 +4,25 @@ import RecipeList from '../RecipeList.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 vi.mock('@/services/recipeService', () => ({
-    getAll: vi.fn(() => Promise.resolve({
-        content: [
-            { id: 1, name: 'Pizza', description: 'Cheese' },
-            { id: 2, name: 'Burger', description: 'Beef' }
-        ],
-        totalPages: 1
-    }))
+    recipeService: {
+        getAll: vi.fn(() => Promise.resolve({
+            content: [
+                { id: '1', title: 'Pizza', description: 'Cheese', ingredients: ['Cheese'], steps: ['Step 1'], cookingTimeMinutes: 20, difficulty: 'EASY', imageUrl: '' },
+                { id: '2', title: 'Burger', description: 'Beef', ingredients: ['Beef'], steps: ['Step 1'], cookingTimeMinutes: 15, difficulty: 'MEDIUM', imageUrl: '' }
+            ],
+            totalPages: 1,
+            totalElements: 2,
+            size: 10,
+            number: 0
+        }))
+    }
 }))
 
 const router = createRouter({
     history: createWebHistory(),
-    routes: []
+    routes: [
+        { path: '/', component: RecipeList }
+    ]
 })
 
 describe('RecipeList', () => {

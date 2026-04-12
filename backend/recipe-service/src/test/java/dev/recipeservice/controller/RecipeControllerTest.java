@@ -46,9 +46,9 @@ class RecipeControllerTest {
                 "Pizza",
                 "Italian pizza",
                 List.of("Flour"),
-                List.of("Bake"),
-                30,
-                Difficulty.MEDIUM,
+                null,
+                null,
+                null,
                 null,
                 Instant.now()
         );
@@ -58,7 +58,7 @@ class RecipeControllerTest {
 
         when(service.findAll(any())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/recipes")
+        mockMvc.perform(get("/api/recipes")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
@@ -73,9 +73,9 @@ class RecipeControllerTest {
                 "Burger",
                 "Tasty burger",
                 List.of("Meat"),
-                List.of("Cook"),
-                20,
-                Difficulty.EASY
+                null,
+                null,
+                null
         );
 
         RecipeResponse response = new RecipeResponse(
@@ -83,16 +83,16 @@ class RecipeControllerTest {
                 "Burger",
                 "Tasty burger",
                 List.of("Meat"),
-                List.of("Cook"),
-                20,
-                Difficulty.EASY,
+                null,
+                null,
+                null,
                 null,
                 Instant.now()
         );
 
         when(service.create(any())).thenReturn(response);
 
-        mockMvc.perform(post("/api/v1/recipes")
+        mockMvc.perform(post("/api/recipes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())

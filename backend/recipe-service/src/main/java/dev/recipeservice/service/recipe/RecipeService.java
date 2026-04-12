@@ -50,9 +50,17 @@ public class RecipeService {
         recipe.setTitle(request.title());
         recipe.setDescription(request.description());
         recipe.setIngredients(request.ingredients());
-        recipe.setSteps(request.steps());
-        recipe.setCookingTimeMinutes(request.cookingTimeMinutes());
-        recipe.setDifficulty(request.difficulty());
+
+        if (request.steps() != null) {
+            recipe.setSteps(request.steps());
+        }
+        if (request.cookingTimeMinutes() != null) {
+            recipe.setCookingTimeMinutes(request.cookingTimeMinutes());
+        }
+        if (request.difficulty() != null) {
+            recipe.setDifficulty(request.difficulty());
+        }
+
         recipe.setUpdatedAt(Instant.now());
 
         return mapper.toDto(repository.save(recipe));

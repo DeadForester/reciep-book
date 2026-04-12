@@ -47,9 +47,9 @@ class RecipeServiceTest {
                 "Pizza",
                 "Italian pizza",
                 List.of("Flour"),
-                List.of("Bake"),
-                30,
-                Difficulty.MEDIUM
+                null,
+                null,
+                null
         );
 
         Recipe entity = new Recipe();
@@ -60,9 +60,9 @@ class RecipeServiceTest {
                 "Pizza",
                 "Italian pizza",
                 List.of("Flour"),
-                List.of("Bake"),
-                30,
-                Difficulty.MEDIUM,
+                null,
+                null,
+                null,
                 null,
                 null
         );
@@ -87,7 +87,7 @@ class RecipeServiceTest {
 
         when(repository.findAll(pageable)).thenReturn(page);
         when(mapper.toDto(any())).thenReturn(
-                new RecipeResponse("1","Test",null,null,null,10,Difficulty.EASY,null,null)
+                new RecipeResponse("1","Test",null,List.of("ing"),null,null,null,null,null)
         );
 
         Page<RecipeResponse> result = service.findAll(pageable);
@@ -136,8 +136,8 @@ class RecipeServiceTest {
                 null,
                 null,
                 null,
-                30,
-                Difficulty.EASY,
+                null,
+                null,
                 "http://minio/test.jpg",
                 null
         );

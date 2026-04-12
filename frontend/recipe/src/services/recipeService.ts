@@ -1,48 +1,78 @@
 import axios from "axios"
-import type { Recipe, RecipeRequest, PageResponse } from "../types/recipe.ts"
+import type { Recipe, RecipeRequest, PageResponse } from "../types/recipe"
 
 const api = axios.create({
-    baseURL: "http://localhost:8080/api/"
+    baseURL: "/api"
 })
 
 export const recipeService = {
 
     async getAll(page = 0, size = 10) {
-        const { data } = await api.get<PageResponse<Recipe>>(
-            `/recipes?page=${page}&size=${size}`
-        )
-        return data
+        try {
+            const { data } = await api.get<PageResponse<Recipe>>(
+                `/recipes?page=${page}&size=${size}`
+            )
+            return data
+        } catch (error) {
+            console.error("Failed to fetch recipes:", error)
+            throw error
+        }
     },
 
     async getById(id: string) {
-        const { data } = await api.get<Recipe>(`/recipes/${id}`)
-        return data
+        try {
+            const { data } = await api.get<Recipe>(`/recipes/${id}`)
+            return data
+        } catch (error) {
+            console.error(`Failed to fetch recipe ${id}:`, error)
+            throw error
+        }
     },
 
     async create(recipe: RecipeRequest) {
-        const { data } = await api.post<Recipe>("/recipes", recipe)
-        return data
+        try {
+            const { data } = await api.post<Recipe>("/recipes", recipe)
+            return data
+        } catch (error) {
+            console.error("Failed to create recipe:", error)
+            throw error
+        }
     },
 
     async update(id: string, recipe: RecipeRequest) {
-        const { data } = await api.put<Recipe>(`/recipes/${id}`, recipe)
-        return data
+        try {
+            const { data } = await api.put<Recipe>(`/recipes/${id}`, recipe)
+            return data
+        } catch (error) {
+            console.error(`Failed to update recipe ${id}:`, error)
+            throw error
+        }
     },
 
     async delete(id: string) {
-        await api.delete(`/recipes/${id}`)
+        try {
+            await api.delete(`/recipes/${id}`)
+        } catch (error) {
+            console.error(`Failed to delete recipe ${id}:`, error)
+            throw error
+        }
     },
 
     async uploadImage(id: string, file: File) {
-        const formData = new FormData()
-        formData.append("file", file)
+        try {
+            const formData = new FormData()
+            formData.append("file", file)
 
-        const { data } = await api.post<Recipe>(
-            `/recipes/${id}/image`,
-            formData,
-            { headers: { "Content-Type": "multipart/form-data" } }
-        )
+            const { data } = await api.post<Recipe>(
+                `/recipes/${id}/image`,
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
+            )
 
-        return data
+            return data
+        } catch (error) {
+            console.error(`Failed to upload image for recipe ${id}:`, error)
+            throw error
+        }
     }
 }
