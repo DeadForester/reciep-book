@@ -11,6 +11,8 @@ app:
     accesskey: bestuser
     secretKey: bestuser
     bucket: recipe-image
+  image:
+    proxy-path: /images/
 
 server:
   port: 8080

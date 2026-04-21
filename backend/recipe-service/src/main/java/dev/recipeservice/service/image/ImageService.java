@@ -1,7 +1,6 @@
 package dev.recipeservice.service.image;
 
 import io.minio.*;
-import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,6 +16,9 @@ public class ImageService {
 
     @Value("${app.minio.bucket}")
     private String bucket;
+
+    @Value("${app.image.proxy-path:/images/}")
+    private String imageProxyPath;
 
     public String uploadFile(MultipartFile file) {
 
@@ -43,12 +45,8 @@ public class ImageService {
                             .contentType(file.getContentType())
                             .build());
 
-            return minioClient.getPresignedObjectUrl(
-                    GetPresignedObjectUrlArgs.builder()
-                            .method(Method.GET)
-                            .bucket(bucket)
-                            .object(fileName)
-                            .build());
+            // Возвращаем относительный URL для проксирования через nginx
+            return imageProxyPath + fileName;
 
         } catch (Exception e) {
             throw new RuntimeException("Error uploading file to MinIO", e);
@@ -57,9 +55,16 @@ public class ImageService {
 
     public void deleteFile(String fileUrl) {
         try {
-            String objectName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+            String objectName;
 
-            // Убираем query параметры
+            if (fileUrl.contains("/images/")) {
+
+                objectName = fileUrl.substring(fileUrl.lastIndexOf("/images/") + 8);
+            } else {
+
+                objectName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+            }
+
             int questionMarkIndex = objectName.indexOf("?");
             if (questionMarkIndex != -1) {
                 objectName = objectName.substring(0, questionMarkIndex);
