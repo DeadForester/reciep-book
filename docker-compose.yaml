@@ -1,10 +1,7 @@
 version: '3.8'
 services:
   backend:
-    build:
-      context: ./backend/recipe-service
-      dockerfile: Dockerfile
-    image: recipe-book-backend:latest
+    image: deadforester/recipe-book-backend:latest
     container_name: recipe-backend
     ports:
       - "8080:8080"
@@ -14,20 +11,20 @@ services:
       APP_MINIO_ACCESS_KEY: bestuser
       APP_MINIO_SECRET_KEY: bestuser
       APP_IMAGE_PROXY_PATH: /images/
+      CORS_ALLOWED_ORIGINS: http://93.77.183.74:3000,http://localhost:3000
     depends_on:
       - mongo
       - minio
+    restart: unless-stopped
 
   frontend:
-    build:
-      context: ./frontend/recipe
-      dockerfile: Dockerfile
-    image: recipe-book-frontend:latest
+    image: deadforester/recipe-book-frontend:latest
     container_name: recipe-frontend
     ports:
       - "3000:80"
     depends_on:
       - backend
+    restart: unless-stopped
 
   mongo:
     image: mongo:latest
@@ -52,7 +49,6 @@ services:
       MINIO_ROOT_PASSWORD: bestuser
     volumes:
       - minio_data:/data
-      - ./minio-init.sh:/docker-entrypoint-initdb.d/minio-init.sh
     restart: unless-stopped
     command: server /data --console-address ":9001"
     healthcheck:
