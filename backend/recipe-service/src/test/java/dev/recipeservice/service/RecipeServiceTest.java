@@ -1,14 +1,14 @@
-package dev.recipeservice.service;
+package dev.recipeservice.service.recipe;
 
 import dev.recipeservice.entity.Difficulty;
 import dev.recipeservice.entity.Recipe;
 import dev.recipeservice.exception.NotFoundException;
 import dev.recipeservice.repository.recipe.RecipeRepository;
 import dev.recipeservice.service.image.ImageService;
-import dev.recipeservice.service.recipe.RecipeService;
 import dev.recipeservice.web.dto.RecipeRequest;
 import dev.recipeservice.web.dto.RecipeResponse;
 import dev.recipeservice.web.mapper.RecipeMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,12 +17,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Pageable;
+import org.springframework.mock.web.MockMultipartFile;
 
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,133 +37,351 @@ class RecipeServiceTest {
     private RecipeRepository repository;
 
     @Mock
-    private ImageService imageService;
-
-    @Mock
     private RecipeMapper mapper;
 
+    @Mock
+    private ImageService imageService;
+
     @InjectMocks
-    private RecipeService service;
+    private RecipeService recipeService;
 
-    @Test
-    void shouldCreateRecipe() {
+    private Recipe recipe;
+    private RecipeRequest request;
+    private RecipeResponse response;
 
-        RecipeRequest request = new RecipeRequest(
-                "Pizza",
-                "Italian pizza",
-                List.of("Flour"),
-                null,
-                null,
-                null
+    @BeforeEach
+    void setUp() {
+        recipe = new Recipe();
+        recipe.setId("test-id");
+        recipe.setTitle("Test Recipe");
+        recipe.setDescription("Test Description");
+        recipe.setIngredients(List.of("ingredient1", "ingredient2"));
+        recipe.setSteps(List.of("step1", "step2"));
+        recipe.setCookingTimeMinutes(30);
+        recipe.setDifficulty(Difficulty.EASY);
+        recipe.setCreatedAt(Instant.now());
+        recipe.setUpdatedAt(Instant.now());
+
+        request = new RecipeRequest(
+                "Updated Title",
+                "Updated Description",
+                List.of("new ingredient"),
+                List.of("new step"),
+                45,
+                Difficulty.MEDIUM
         );
 
-        Recipe entity = new Recipe();
-        entity.setTitle("Pizza");
-
-        RecipeResponse response = new RecipeResponse(
-                "1",
-                "Pizza",
-                "Italian pizza",
-                List.of("Flour"),
+        response = new RecipeResponse(
+                "test-id",
+                "Test Recipe",
+                "Test Description",
+                List.of("ingredient1"),
+                List.of("step1"),
+                30,
+                Difficulty.EASY,
                 null,
-                null,
-                null,
-                null,
-                null
+                Instant.now()
         );
-
-        when(mapper.toEntity(request)).thenReturn(entity);
-        when(repository.save(entity)).thenReturn(entity);
-        when(mapper.toDto(entity)).thenReturn(response);
-
-        RecipeResponse result = service.create(request);
-
-        assertThat(result.title()).isEqualTo("Pizza");
-        verify(repository).save(entity);
     }
 
     @Test
-    void shouldReturnAllRecipes() {
+    void create_ShouldMapToEntityAndSave() {
+        // Given
+        when(mapper.toEntity(any(RecipeRequest.class))).thenReturn(recipe);
+        when(repository.save(any(Recipe.class))).thenReturn(recipe);
+        when(mapper.toDto(any(Recipe.class))).thenReturn(response);
 
-        PageRequest pageable = PageRequest.of(0, 10);
+        // When
+        RecipeResponse result = recipeService.create(request);
 
-        Recipe recipe = new Recipe();
-        Page<Recipe> page = new PageImpl<>(List.of(recipe));
+        // Then
+        assertNotNull(result);
+        verify(mapper, times(1)).toEntity(request);
+        verify(repository, times(1)).save(any(Recipe.class));
+        verify(mapper, times(1)).toDto(recipe);
+    }
 
-        when(repository.findAll(pageable)).thenReturn(page);
-        when(mapper.toDto(any())).thenReturn(
-                new RecipeResponse("1","Test",null,List.of("ing"),null,null,null,null,null)
+    @Test
+    void findAll_ShouldReturnPageOfRecipes() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Recipe> recipePage = new PageImpl<>(List.of(recipe));
+        Page<RecipeResponse> responsePage = new PageImpl<>(List.of(response));
+
+        when(repository.findAll(pageable)).thenReturn(recipePage);
+        when(mapper.toDto(recipe)).thenReturn(response);
+
+        // When
+        Page<RecipeResponse> result = recipeService.findAll(pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(repository, times(1)).findAll(pageable);
+        verify(mapper, times(1)).toDto(recipe);
+    }
+
+    @Test
+    void findAll_ShouldReturnEmptyPage_WhenNoRecipes() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Recipe> emptyPage = new PageImpl<>(Collections.emptyList());
+
+        when(repository.findAll(pageable)).thenReturn(emptyPage);
+
+        // When
+        Page<RecipeResponse> result = recipeService.findAll(pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
+    void findById_ShouldReturnRecipe_WhenExists() {
+        // Given
+        String id = "test-id";
+        when(repository.findById(id)).thenReturn(Optional.of(recipe));
+        when(mapper.toDto(recipe)).thenReturn(response);
+
+        // When
+        RecipeResponse result = recipeService.findById(id);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(response, result);
+        verify(repository, times(1)).findById(id);
+        verify(mapper, times(1)).toDto(recipe);
+    }
+
+    @Test
+    void findById_ShouldThrowNotFoundException_WhenNotExists() {
+        // Given
+        String id = "non-existent-id";
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        // When & Then
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
+            recipeService.findById(id);
+        });
+
+        assertEquals("Рецепт не найден", exception.getMessage());
+        verify(repository, times(1)).findById(id);
+        verify(mapper, never()).toDto(any());
+    }
+
+    @Test
+    void update_ShouldUpdateAllFields_WhenAllProvided() {
+        // Given
+        String id = "test-id";
+        Recipe updatedRecipe = new Recipe();
+        updatedRecipe.setId(id);
+        updatedRecipe.setTitle("Updated Title");
+        updatedRecipe.setDescription("Updated Description");
+        updatedRecipe.setIngredients(List.of("new ingredient"));
+        updatedRecipe.setSteps(List.of("new step"));
+        updatedRecipe.setCookingTimeMinutes(45);
+        updatedRecipe.setDifficulty(Difficulty.MEDIUM);
+
+        when(repository.findById(id)).thenReturn(Optional.of(recipe));
+        when(repository.save(any(Recipe.class))).thenReturn(updatedRecipe);
+        when(mapper.toDto(updatedRecipe)).thenReturn(response);
+
+        // When
+        RecipeResponse result = recipeService.update(id, request);
+
+        // Then
+        assertNotNull(result);
+        verify(repository, times(1)).findById(id);
+        verify(repository, times(1)).save(any(Recipe.class));
+        verify(mapper, times(1)).toDto(any(Recipe.class));
+    }
+
+    @Test
+    void update_ShouldUpdateOnlyProvidedFields_WhenSomeAreNull() {
+        // Given
+        String id = "test-id";
+        RecipeRequest partialRequest = new RecipeRequest(
+                "Updated Title",
+                "Updated Description",
+                List.of("new ingredient"),
+                null,  // steps is null
+                null,  // cookingTimeMinutes is null
+                null   // difficulty is null
         );
 
-        Page<RecipeResponse> result = service.findAll(pageable);
+        when(repository.findById(id)).thenReturn(Optional.of(recipe));
+        when(repository.save(any(Recipe.class))).thenReturn(recipe);
+        when(mapper.toDto(recipe)).thenReturn(response);
 
-        assertThat(result.getContent()).hasSize(1);
+        // When
+        RecipeResponse result = recipeService.update(id, partialRequest);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("Updated Title", recipe.getTitle());
+        assertEquals("Updated Description", recipe.getDescription());
+        assertEquals(List.of("new ingredient"), recipe.getIngredients());
+        // These should remain unchanged (not null)
+        assertNotNull(recipe.getSteps());
+        assertNotNull(recipe.getCookingTimeMinutes());
+        assertNotNull(recipe.getDifficulty());
     }
 
     @Test
-    void shouldDeleteRecipe() {
+    void update_ShouldThrowNotFoundException_WhenNotExists() {
+        // Given
+        String id = "non-existent-id";
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
-        Recipe recipe = new Recipe();
-        recipe.setId("123");
+        // When & Then
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
+            recipeService.update(id, request);
+        });
 
-        when(repository.findById("123"))
-                .thenReturn(Optional.of(recipe));
-
-        service.deleteById("123");
-
-        verify(repository).delete(recipe);
+        assertEquals("Рецепт не найден", exception.getMessage());
+        verify(repository, times(1)).findById(id);
+        verify(repository, never()).save(any());
     }
 
     @Test
-    void shouldThrowIfDeleteNotFound() {
+    void deleteById_ShouldDeleteRecipeAndImage_WhenImageExists() {
+        // Given
+        String id = "test-id";
+        recipe.setImageUrl("/images/test-image.jpg");
 
-        when(repository.findById("999"))
-                .thenReturn(Optional.empty());
+        when(repository.findById(id)).thenReturn(Optional.of(recipe));
 
-        assertThatThrownBy(() -> service.deleteById("999"))
-                .isInstanceOf(NotFoundException.class);
+        // When
+        recipeService.deleteById(id);
+
+        // Then
+        verify(repository, times(1)).findById(id);
+        verify(imageService, times(1)).deleteFile("/images/test-image.jpg");
+        verify(repository, times(1)).delete(recipe);
     }
 
     @Test
-    void shouldUploadImage() throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
+    void deleteById_ShouldDeleteRecipeWithoutImage_WhenNoImage() {
+        // Given
+        String id = "test-id";
+        recipe.setImageUrl(null);
 
-        Recipe recipe = new Recipe();
-        recipe.setId("1");
+        when(repository.findById(id)).thenReturn(Optional.of(recipe));
 
-        Recipe savedRecipe = new Recipe();
-        savedRecipe.setId("1");
-        savedRecipe.setImageUrl("http://minio/test.jpg");
+        // When
+        recipeService.deleteById(id);
 
-        RecipeResponse response = new RecipeResponse(
-                "1",
-                "Pizza",
-                null,
-                null,
-                null,
-                null,
-                null,
-                "http://minio/test.jpg",
-                null
+        // Then
+        verify(repository, times(1)).findById(id);
+        verify(imageService, never()).deleteFile(anyString());
+        verify(repository, times(1)).delete(recipe);
+    }
+
+    @Test
+    void deleteById_ShouldThrowNotFoundException_WhenNotExists() {
+        // Given
+        String id = "non-existent-id";
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        // When & Then
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
+            recipeService.deleteById(id);
+        });
+
+        assertEquals("Рецепт не найден", exception.getMessage());
+        verify(repository, times(1)).findById(id);
+        verify(imageService, never()).deleteFile(anyString());
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void uploadImage_ShouldUploadNewImage_WhenNoExistingImage() {
+        // Given
+        String id = "test-id";
+        recipe.setImageUrl(null);
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                "image/jpeg",
+                "test content".getBytes()
+        );
+        String imageUrl = "/images/new-image.jpg";
+        Recipe updatedRecipe = new Recipe();
+        updatedRecipe.setId(id);
+        updatedRecipe.setImageUrl(imageUrl);
+
+        when(repository.findById(id)).thenReturn(Optional.of(recipe));
+        when(imageService.uploadFile(file)).thenReturn(imageUrl);
+        when(repository.save(recipe)).thenReturn(updatedRecipe);
+        when(mapper.toDto(updatedRecipe)).thenReturn(response);
+
+        // When
+        RecipeResponse result = recipeService.uploadImage(id, file);
+
+        // Then
+        assertNotNull(result);
+        verify(repository, times(1)).findById(id);
+        verify(imageService, never()).deleteFile(anyString());
+        verify(imageService, times(1)).uploadFile(file);
+        assertEquals(imageUrl, recipe.getImageUrl());
+        verify(repository, times(1)).save(recipe);
+    }
+
+    @Test
+    void uploadImage_ShouldDeleteOldAndUploadNew_WhenImageExists() {
+        // Given
+        String id = "test-id";
+        recipe.setImageUrl("/images/old-image.jpg");
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "new.jpg",
+                "image/jpeg",
+                "new content".getBytes()
+        );
+        String newImageUrl = "/images/new-image.jpg";
+        Recipe updatedRecipe = new Recipe();
+        updatedRecipe.setId(id);
+        updatedRecipe.setImageUrl(newImageUrl);
+
+        when(repository.findById(id)).thenReturn(Optional.of(recipe));
+        when(imageService.uploadFile(file)).thenReturn(newImageUrl);
+        when(repository.save(recipe)).thenReturn(updatedRecipe);
+        when(mapper.toDto(updatedRecipe)).thenReturn(response);
+
+        // When
+        RecipeResponse result = recipeService.uploadImage(id, file);
+
+        // Then
+        assertNotNull(result);
+        verify(repository, times(1)).findById(id);
+        verify(imageService, times(1)).deleteFile("/images/old-image.jpg");
+        verify(imageService, times(1)).uploadFile(file);
+        assertEquals(newImageUrl, recipe.getImageUrl());
+        verify(repository, times(1)).save(recipe);
+    }
+
+    @Test
+    void uploadImage_ShouldThrowNotFoundException_WhenNotExists() {
+        // Given
+        String id = "non-existent-id";
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                "image/jpeg",
+                "test content".getBytes()
         );
 
-        when(repository.findById("1"))
-                .thenReturn(Optional.of(recipe));
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
-        when(imageService.uploadFile(file))
-                .thenReturn("http://minio/test.jpg");
+        // When & Then
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> {
+            recipeService.uploadImage(id, file);
+        });
 
-        when(repository.save(recipe))
-                .thenReturn(savedRecipe);
-
-        when(mapper.toDto(savedRecipe))
-                .thenReturn(response);
-
-        RecipeResponse result = service.uploadImage("1", file);
-
-        assertThat(result.imageUrl())
-                .isEqualTo("http://minio/test.jpg");
-
-        verify(repository).save(recipe);
+        assertEquals("Рецепт не найден", exception.getMessage());
+        verify(repository, times(1)).findById(id);
+        verify(imageService, never()).uploadFile(any());
+        verify(imageService, never()).deleteFile(anyString());
     }
 }
