@@ -2,6 +2,11 @@ name: Frontend Tests
 
 on:
   workflow_call:
+    secrets:
+      TELEGRAM_BOT_TOKEN:
+        required: true
+      TELEGRAM_CHAT_ID:
+        required: true
 
 jobs:
   test:
@@ -43,10 +48,9 @@ jobs:
 
       - name: Notify Telegram
         if: always()
-        uses: ./.github/workflows/action.yml
+        uses: ./.github/actions/telegram-notify-v2
         with:
-          job-name: Frontend Test
+          job-name: Frontend Tests
           status: ${{ job.status }}
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          telegram-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          telegram-chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}

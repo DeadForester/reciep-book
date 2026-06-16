@@ -2,6 +2,11 @@ name: Backend Build
 
 on:
   workflow_call:
+    secrets:
+      TELEGRAM_BOT_TOKEN:
+        required: true
+      TELEGRAM_CHAT_ID:
+        required: true
 
 jobs:
   build:
@@ -39,9 +44,9 @@ jobs:
 
       - name: Notify Telegram
         if: always()
-        uses: ./.github/actions/telegram-notify
+        uses: ./.github/actions/telegram-notify-v2
         with:
-          job-name: Backend Test
+          job-name: Backend Build
           status: ${{ job.status }}
           telegram-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           telegram-chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
