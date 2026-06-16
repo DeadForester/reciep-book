@@ -1,0 +1,37 @@
+name: Update Kubernetes Manifests
+
+on:
+  workflow_call:
+
+jobs:
+  update-manifests:
+    name: Update Image Tags in Manifests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Update backend image tag
+        run: |
+          sed -i "s|cr.yandex/crpogsfdi7ukhk7uooeg/recipe-backend:.*|cr.yandex/crpogsfdi7ukhk7uooeg/recipe-backend:${{ github.sha }}|g" kubernetes/k8s/backend.yaml
+          sed -i "s|cr.yandex/crpogsfdi7ukhk7uooeg/recipe-frontend:.*|cr.yandex/crpogsfdi7ukhk7uooeg/recipe-frontend:${{ github.sha }}|g" kubernetes/k8s/frontend.yaml
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          git diff --exit-code kubernetes/k8s/backend.yaml kubernetes/k8s/frontend.yaml || echo "changes=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push changes
+        if: steps.check-changes.outputs.changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kubernetes/k8s/*.yaml
+          git commit -m "chore: update images to ${{ github.sha }} [skip ci]"
+          git push

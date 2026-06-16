@@ -49,8 +49,8 @@ jobs:
     uses: ./.github/workflows/docker-frontend.yml
     secrets: inherit
 
-  # ЭТАП 8: Docker Clean
-  docker-clean:
-    needs: [docker-backend, docker-frontend]
-    uses: ./.github/workflows/cleanup.yml
+  # Этап 8: Обновление манифестов
+  update-manifests:
+    needs: docker-frontend
+    uses: ./.github/workflows/update-manifest.yml
     secrets: inherit
