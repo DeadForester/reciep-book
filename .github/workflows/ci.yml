@@ -112,7 +112,7 @@ jobs:
         working-directory: ${{ env.FRONTEND_DIR }}
 
       - name: Run frontend tests with coverage
-        run: npm run test -- --run --coverage
+        run: npm run test
         working-directory: ${{ env.FRONTEND_DIR }}
 
       - name: Upload coverage report
