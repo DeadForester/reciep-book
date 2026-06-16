@@ -1,0 +1,63 @@
+---
+- name: Установка Docker на виртуальную машину
+  hosts: lab_vm
+  become: yes
+  
+  tasks:
+    - name: Обновление apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Установка необходимых пакетов
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - gnupg
+        state: present
+
+    - name: Добавление GPG ключа Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Добавление репозитория Docker
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+        state: present
+
+    - name: Обновление apt cache после добавления репозитория
+      apt:
+        update_cache: yes
+
+    - name: Установка Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+
+    - name: Добавление пользователя ubuntu в группу docker
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Запуск Docker сервиса
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Проверка установки Docker
+      command: docker --version
+      register: docker_version
+
+    - name: Вывод версии Docker
+      debug:
+        msg: "Установлен {{ docker_version.stdout }}"
