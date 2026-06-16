@@ -243,10 +243,23 @@ describe('RecipeForm.vue', () => {
         it('should show error when cooking time is less than 5 minutes', async () => {
             const wrapper = await mountForm('/create')
 
+            // ✅ Заполняем title
             const titleInput = wrapper.find('input[placeholder*="Например"]')
             await titleInput.setValue('Test Recipe')
+
+            // ✅ Заполняем description
             await wrapper.find('textarea').setValue('Description')
 
+            // ✅ Заполняем ингредиент (иначе валидация упадёт на нём)
+            const allInputs = wrapper.findAll('.form-list__input')
+            await allInputs[0].setValue('Ingredient 1')
+
+            // ✅ Заполняем шаг (иначе валидация упадёт на шагах)
+            if (allInputs.length > 1) {
+                await allInputs[1].setValue('Step 1')
+            }
+
+            // ✅ Устанавливаем время < 5 минут
             const timeInput = wrapper.find('input[type="number"]')
             await timeInput.setValue(3)
 
