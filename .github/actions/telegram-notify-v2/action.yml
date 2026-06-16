@@ -16,7 +16,6 @@ inputs:
 
 runs:
   using: composite
-
   steps:
     - shell: bash
       env:
