@@ -41,7 +41,7 @@ jobs:
 
       - name: Notify Telegram
         if: always()
-        uses: ./.github/actions/telegram-notify
+        uses: ./.github/actions/telegram-notify-v2
         with:
           job-name: Backend Test
           status: ${{ job.status }}
