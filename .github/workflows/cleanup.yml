@@ -11,7 +11,6 @@ jobs:
   cleanup:
     name: Cleanup - Old Docker Images
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.1
@@ -30,7 +29,7 @@ jobs:
             --format json)
           
           TOTAL_COUNT=$(echo "$IMAGES" | jq 'length')
-          echo " Всего образов Backend: $TOTAL_COUNT"
+          echo "📊 Всего образов Backend: $TOTAL_COUNT"
           
           if [ "$TOTAL_COUNT" -le "${{ env.KEEP_IMAGES_COUNT }}" ]; then
             echo "✅ Образов меньше или равно ${{ env.KEEP_IMAGES_COUNT }}, удаление не требуется"
@@ -46,7 +45,7 @@ jobs:
           ')
           
           for IMAGE_ID in $IMAGES_TO_DELETE; do
-            echo "️  Удаляю образ: $IMAGE_ID"
+            echo "🗑️  Удаляю образ: $IMAGE_ID"
             yc container image delete $IMAGE_ID --async || echo "⚠️  Не удалось удалить $IMAGE_ID"
           done
           
@@ -61,7 +60,7 @@ jobs:
             --format json)
           
           TOTAL_COUNT=$(echo "$IMAGES" | jq 'length')
-          echo " Всего образов Frontend: $TOTAL_COUNT"
+          echo "📊 Всего образов Frontend: $TOTAL_COUNT"
           
           if [ "$TOTAL_COUNT" -le "${{ env.KEEP_IMAGES_COUNT }}" ]; then
             echo "✅ Образов меньше или равно ${{ env.KEEP_IMAGES_COUNT }}, удаление не требуется"
@@ -85,5 +84,5 @@ jobs:
 
       - name: Summary
         run: |
-          echo " Очистка Docker образов завершена!"
+          echo "🎉 Очистка Docker образов завершена!"
           echo "📦 Оставлено по ${{ env.KEEP_IMAGES_COUNT }} последних образов для Backend и Frontend"

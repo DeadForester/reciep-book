@@ -1,1 +1,4 @@
 .env
+terraform/my_key
+terraform/my_key.pub
+terraform/terraform.tfstate

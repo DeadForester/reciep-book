@@ -1,0 +1,5 @@
+yc_token      = "y0__xCqkbHoAhjB3RMgg6mIiRcwioWY7AfeGpo8Kr0_PFu7RvBqlJOvloIo2A"
+yc_cloud_id   = "b1gdb1fu0n5r1e2dk2h5"
+yc_folder_id  = "b1guad74u9utupfu9hnd"
+zone          = "ru-central1-a"
+vm_name       = "lab2"
