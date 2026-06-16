@@ -4,7 +4,6 @@ metadata:
   name: mongo
   namespace: recipe
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: mongo

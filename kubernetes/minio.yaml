@@ -4,7 +4,6 @@ metadata:
   name: minio
   namespace: recipe
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: minio
