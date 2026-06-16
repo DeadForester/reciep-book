@@ -40,13 +40,17 @@ jobs:
   # ЭТАП 6: Docker Backend
   docker-backend:
     needs: sonarqube-scan
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     uses: ./.github/workflows/docker-backend.yml
     secrets: inherit
 
   # ЭТАП 7: Docker Frontend
   docker-frontend:
     needs: docker-backend
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     uses: ./.github/workflows/docker-frontend.yml
+    secrets: inherit
+
+  # ЭТАП 8: Docker Clean
+  docker-clean:
+    needs: [docker-backend, docker-frontend]
+    uses: ./.github/workflows/cleanup.yml
     secrets: inherit
