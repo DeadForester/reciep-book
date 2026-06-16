@@ -47,3 +47,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  notify:
+    needs: build-push
+    if: always()
+    uses: ./.github/workflows/notify.yml
+    with:
+      stage-name: "Docker Frontend"
+      status: ${{ needs.build-push.result == 'success' && 'success' || 'failure' }}
+    secrets:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

@@ -40,3 +40,13 @@ jobs:
           name: frontend-coverage
           path: frontend/recipe/coverage/
           retention-days: 1
+  notify:
+    needs: test
+    if: always()
+    uses: ./.github/workflows/notify.yml
+    with:
+      stage-name: "Frontend Tests"
+      status: ${{ needs.test.result == 'success' && 'success' || 'failure' }}
+    secrets:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

@@ -38,3 +38,13 @@ jobs:
           name: jacoco-report
           path: backend/recipe-service/target/site/jacoco/
           retention-days: 1
+  notify:
+    needs: test
+    if: always()
+    uses: ./.github/workflows/notify.yml
+    with:
+      stage-name: "Backend Tests"
+      status: ${{ needs.test.result == 'success' && 'success' || 'failure' }}
+    secrets:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
