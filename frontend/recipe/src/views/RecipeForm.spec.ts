@@ -122,9 +122,9 @@ describe('RecipeForm.vue', () => {
 
             const options = wrapper.findAll('option')
             expect(options.length).toBe(3)
-            expect(options[0].text()).toContain('Лёгкий')
-            expect(options[1].text()).toContain('Средний')
-            expect(options[2].text()).toContain('Сложный')
+            expect(options[0]!.text()).toContain('Лёгкий')
+            expect(options[1]!.text()).toContain('Средний')
+            expect(options[2]!.text()).toContain('Сложный')
         })
     })
 
@@ -133,7 +133,7 @@ describe('RecipeForm.vue', () => {
             const wrapper = await mountForm('/create')
 
             const initialCount = wrapper.findAll('.form-list__item').length
-            const addButton = wrapper.findAll('.form-list__add')[0]
+            const addButton = wrapper.findAll('.form-list__add')[0]!
 
             await addButton.trigger('click')
 
@@ -144,12 +144,12 @@ describe('RecipeForm.vue', () => {
         it('should remove ingredient when clicking remove button', async () => {
             const wrapper = await mountForm('/create')
 
-            const addButton = wrapper.findAll('.form-list__add')[0]
+            const addButton = wrapper.findAll('.form-list__add')[0]!
             await addButton.trigger('click')
 
             const initialCount = wrapper.findAll('.form-list__item').length
 
-            const removeButton = wrapper.findAll('.form-list__remove')[0]
+            const removeButton = wrapper.findAll('.form-list__remove')[0]!
             await removeButton.trigger('click')
 
             const newCount = wrapper.findAll('.form-list__item').length
@@ -159,7 +159,7 @@ describe('RecipeForm.vue', () => {
         it('should disable remove button when only one ingredient left', async () => {
             const wrapper = await mountForm('/create')
 
-            const removeButton = wrapper.findAll('.form-list__remove')[0]
+            const removeButton = wrapper.findAll('.form-list__remove')[0]!
             expect(removeButton.attributes('disabled')).toBeDefined()
         })
     })
@@ -169,7 +169,7 @@ describe('RecipeForm.vue', () => {
             const wrapper = await mountForm('/create')
 
             const initialCount = wrapper.findAll('.form-list__item').length
-            const addButton = wrapper.findAll('.form-list__add')[1]
+            const addButton = wrapper.findAll('.form-list__add')[1]!
 
             await addButton.trigger('click')
 
@@ -180,13 +180,13 @@ describe('RecipeForm.vue', () => {
         it('should remove step when clicking remove button', async () => {
             const wrapper = await mountForm('/create')
 
-            const addButton = wrapper.findAll('.form-list__add')[1]
+            const addButton = wrapper.findAll('.form-list__add')[1]!
             await addButton.trigger('click')
 
             const initialCount = wrapper.findAll('.form-list__item').length
 
             const removeButtons = wrapper.findAll('.form-list__remove')
-            const stepRemoveButton = removeButtons[removeButtons.length - 1]
+            const stepRemoveButton = removeButtons[removeButtons.length - 1]!
             await stepRemoveButton.trigger('click')
 
             const newCount = wrapper.findAll('.form-list__item').length
@@ -243,23 +243,18 @@ describe('RecipeForm.vue', () => {
         it('should show error when cooking time is less than 5 minutes', async () => {
             const wrapper = await mountForm('/create')
 
-            // ✅ Заполняем title
             const titleInput = wrapper.find('input[placeholder*="Например"]')
             await titleInput.setValue('Test Recipe')
 
-            // ✅ Заполняем description
             await wrapper.find('textarea').setValue('Description')
 
-            // ✅ Заполняем ингредиент (иначе валидация упадёт на нём)
             const allInputs = wrapper.findAll('.form-list__input')
-            await allInputs[0].setValue('Ingredient 1')
+            await allInputs[0]!.setValue('Ingredient 1')
 
-            // ✅ Заполняем шаг (иначе валидация упадёт на шагах)
             if (allInputs.length > 1) {
-                await allInputs[1].setValue('Step 1')
+                await allInputs[1]!.setValue('Step 1')
             }
 
-            // ✅ Устанавливаем время < 5 минут
             const timeInput = wrapper.find('input[type="number"]')
             await timeInput.setValue(3)
 
