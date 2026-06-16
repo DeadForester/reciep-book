@@ -20,64 +20,34 @@ runs:
   steps:
     - name: Send Telegram notification
       shell: bash
-
       run: |
         echo "Token length: ${#TELEGRAM_BOT_TOKEN}"
         echo "Chat ID length: ${#TELEGRAM_CHAT_ID}"
-        
+
         case "$JOB_STATUS" in
-          success)
-            ICON="✅"
-            TEXT="SUCCESS"
-            ;;
-          failure)
-            ICON="❌"
-            TEXT="FAILED"
-            ;;
-          cancelled)
-            ICON="⛔"
-            TEXT="CANCELLED"
-            ;;
-          skipped)
-            ICON="⏭️"
-            TEXT="SKIPPED"
-            ;;
-          *)
-            ICON="❓"
-            TEXT="$JOB_STATUS"
-            ;;
+          success) ICON="✅"; TEXT="SUCCESS" ;;
+          failure) ICON="❌"; TEXT="FAILED" ;;
+          cancelled) ICON="⛔"; TEXT="CANCELLED" ;;
+          skipped) ICON="⏭️"; TEXT="SKIPPED" ;;
+          *) ICON="❓"; TEXT="$JOB_STATUS" ;;
         esac
 
-        MESSAGE=$(cat <<EOF
-        🚀 GitHub Actions
-
+        MESSAGE="🚀 GitHub Actions
+  
         ${ICON} ${JOB_NAME}
-
         Status: ${TEXT}
 
-        📦 Repository:
-        ${GITHUB_REPOSITORY}
-
-        🌿 Branch:
-        ${GITHUB_REF_NAME}
-
-        👤 Author:
-        ${GITHUB_ACTOR}
-
-        🔑 Commit:
-        ${GITHUB_SHA}
-
-        🔗 https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
-        EOF
-        )
-
+        Repo: ${GITHUB_REPOSITORY}
+        Branch: ${GITHUB_REF_NAME}
+        Commit: ${GITHUB_SHA}"
+  
         curl -s -X POST \
-          "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-          -d chat_id="${TELEGRAM_CHAT_ID}" \
-          --data-urlencode text="$MESSAGE"
+        "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+        -d chat_id="${TELEGRAM_CHAT_ID}" \
+        --data-urlencode text="$MESSAGE"
+
       env:
         JOB_NAME: ${{ inputs.job-name }}
         JOB_STATUS: ${{ inputs.status }}
         TELEGRAM_BOT_TOKEN: ${{ inputs.telegram-token }}
         TELEGRAM_CHAT_ID: ${{ inputs.telegram-chat-id }}
-        
