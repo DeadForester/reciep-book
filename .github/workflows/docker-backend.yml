@@ -50,7 +50,7 @@ jobs:
 
       - name: Notify Telegram
         if: always()
-        uses: ./.github/actions/telegram-notify
+        uses: ./.github/workflows/action.yml
         with:
           job-name: Docker Backend
           status: ${{ job.status }}

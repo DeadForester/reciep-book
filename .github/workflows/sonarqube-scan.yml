@@ -71,7 +71,7 @@ jobs:
 
       - name: Notify Telegram
         if: always()
-        uses: ./.github/actions/telegram-notify
+        uses: ./.github/workflows/action.yml
         with:
           job-name: SonarQube Scan
           status: ${{ job.status }}
