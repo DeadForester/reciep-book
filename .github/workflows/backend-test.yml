@@ -40,7 +40,7 @@ jobs:
           retention-days: 1
       - name: Notify Telegram
         if: always()
-        uses: ./.github/workflows/action.yml
+        uses: ./.github/actions/telegram-notify
         with:
           job-name: Backend Test
           status: ${{ job.status }}
