@@ -15,21 +15,25 @@ jobs:
   # ЭТАП 1: Тесты Backend
   backend-test:
     uses: ./.github/workflows/backend-test.yml
+    secrets: inherit
 
   # ЭТАП 2: Сборка Backend
   backend-build:
     needs: backend-test
     uses: ./.github/workflows/backend-build.yml
+    secrets: inherit
 
   # ЭТАП 3: Тесты Frontend
   frontend-test:
     needs: backend-build
     uses: ./.github/workflows/frontend-test.yml
+    secrets: inherit
 
   # ЭТАП 4: Сборка Frontend
   frontend-build:
     needs: frontend-test
     uses: ./.github/workflows/frontend-build.yml
+    secrets: inherit
 
   # ЭТАП 5: SonarQube
   sonarqube-scan:
