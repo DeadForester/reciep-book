@@ -1,0 +1,22 @@
+name: Test Telegram Notification
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-telegram:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send test message to Telegram
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            🧪 *Test Message*
+            
+            ✅ This is a test notification from GitHub Actions!
+            📦 Repository: ${{ github.repository }}
+            🕐 Time: $(date)
+            🔗 [View Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
