@@ -47,10 +47,47 @@ jobs:
           path: ${{ env.BACKEND_DIR }}/target/site/jacoco/
           retention-days: 1
 
-  # ЭТАП 2: Тесты Frontend
+  # ЭТАП 2: Сборка Backend
+  backend-build:
+    name: Backend - Build
+    runs-on: ubuntu-latest
+    needs: backend-test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build backend
+        run: mvn clean package -DskipTests
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Upload backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: ${{ env.BACKEND_DIR }}/target/*.jar
+          retention-days: 1
+
+
+  # ЭТАП 3: Тесты Frontend
   frontend-test:
     name: Frontend - Test
     runs-on: ubuntu-latest
+    needs: backend-build
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -85,40 +122,6 @@ jobs:
           path: ${{ env.FRONTEND_DIR }}/coverage/
           retention-days: 1
 
-  # ЭТАП 3: Сборка Backend
-  backend-build:
-    name: Backend - Build
-    runs-on: ubuntu-latest
-    needs: backend-test
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Build backend
-        run: mvn clean package -DskipTests
-        working-directory: ${{ env.BACKEND_DIR }}
-
-      - name: Upload backend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-jar
-          path: ${{ env.BACKEND_DIR }}/target/*.jar
-          retention-days: 1
 
   # ЭТАП 4: Сборка Frontend
   frontend-build:
