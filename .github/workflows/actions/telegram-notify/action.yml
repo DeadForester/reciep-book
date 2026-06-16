@@ -1,0 +1,71 @@
+name: Telegram Notify
+description: Send GitHub Actions notification to Telegram
+
+inputs:
+  job-name:
+    description: Job name
+    required: true
+
+  status:
+    description: Job status
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - shell: bash
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ env.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ env.TELEGRAM_CHAT_ID }}
+      run: |
+
+        case "${{ inputs.status }}" in
+          success)
+            ICON="✅"
+            TEXT="SUCCESS"
+            ;;
+          failure)
+            ICON="❌"
+            TEXT="FAILED"
+            ;;
+          cancelled)
+            ICON="⛔"
+            TEXT="CANCELLED"
+            ;;
+          skipped)
+            ICON="⏭"
+            TEXT="SKIPPED"
+            ;;
+          *)
+            ICON="❓"
+            TEXT="${{ inputs.status }}"
+            ;;
+        esac
+
+        MESSAGE="🚀 GitHub Actions
+
+  ${ICON} ${{ inputs.job-name }}
+
+Status: ${TEXT}
+
+📦 Repository:
+  ${GITHUB_REPOSITORY}
+
+🌿 Branch:
+  ${GITHUB_REF_NAME}
+
+👤 Author:
+  ${GITHUB_ACTOR}
+
+🔑 Commit:
+  ${GITHUB_SHA}
+  
+  🔗 https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+  "
+  
+  curl -s \
+  -X POST \
+  "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+  -d chat_id="${TELEGRAM_CHAT_ID}" \
+  --data-urlencode text="$MESSAGE"

@@ -69,13 +69,12 @@ jobs:
           echo "Check the report: ${{ secrets.SONAR_HOST_URL }}/dashboard?id=${{ secrets.SONAR_PROJECT_KEY }}"
           exit 1
 
-  notify:
-    needs: scan
-    if: always()
-    uses: ./.github/workflows/notify.yml
-    with:
-      stage-name: "Scan all code"
-      status: ${{ needs.update-manifests.result == 'success' && 'success' || 'failure' }}
-    secrets:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Notify Telegram
+        if: always()
+        uses: ./.github/actions/telegram-notify
+        with:
+          job-name: SonarQube Scan
+          status: ${{ job.status }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

@@ -36,13 +36,12 @@ jobs:
           git commit -m "chore: update images to ${{ github.sha }} [skip ci]"
           git push
 
-  notify:
-    needs: update-manifests
-    if: always()
-    uses: ./.github/workflows/notify.yml
-    with:
-      stage-name: "Update Manifests"
-      status: ${{ needs.update-manifests.result == 'success' && 'success' || 'failure' }}
-    secrets:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Notify Telegram
+        if: always()
+        uses: ./.github/actions/telegram-notify
+        with:
+          job-name: Update Manifests
+          status: ${{ job.status }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

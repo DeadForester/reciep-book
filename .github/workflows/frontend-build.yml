@@ -37,13 +37,13 @@ jobs:
       - name: Build frontend
         run: npm run build-only
         working-directory: frontend/recipe
-  notify:
-    needs: build
-    if: always()
-    uses: ./.github/workflows/notify.yml
-    with:
-      stage-name: "Frontend Build"
-      status: ${{ needs.build.result == 'success' && 'success' || 'failure' }}
-    secrets:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: Notify Telegram
+        if: always()
+        uses: ./.github/actions/telegram-notify
+        with:
+          job-name: Frontend Build
+          status: ${{ job.status }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
