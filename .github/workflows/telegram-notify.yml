@@ -1,22 +1,46 @@
-name: Test Telegram Notification
+name: Telegram Notifications
 
 on:
-  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "CI Pipeline"
+      - "Backend Tests"
+      - "Backend Build"
+      - "Frontend Tests"
+      - "Frontend Build"
+      - "SonarQube Scan"
+      - "Docker Backend"
+      - "Docker Frontend"
+      - "Update Kubernetes Manifests"
+    types:
+      - completed
 
 jobs:
-  test-telegram:
+  send-telegram-notification:
     runs-on: ubuntu-latest
+    if: always()  # Отправлять уведомление даже при ошибке
     steps:
-      - name: Send test message to Telegram
+      - name: Send Telegram Notification
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
           message: |
-            🧪 *Test Message*
-            
-            ✅ This is a test notification from GitHub Actions!
-            📦 Repository: ${{ github.repository }}
-            🕐 Time: $(date)
-            🔗 [View Action](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            🚀 *CI/CD Pipeline Status*
+
+            📦 *Repository:* ${{ github.repository }}
+            🔄 *Workflow:* ${{ github.workflow }}
+            🏷️ *Branch:* ${{ github.ref_name }}
+            📝 *Commit:* [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+
+            ⏱️ *Status:* ${{ github.event.workflow_run.conclusion == 'success' && '✅ SUCCESS' || '❌ FAILED' }}
+
+            👤 *Author:* ${{ github.actor }}
+            📊 *Run ID:* ${{ github.run_id }}
+
+            🔗 [View Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            📅 *Time:* ${{ github.event.workflow_run.created_at }}
+
+            ${{ github.event.workflow_run.conclusion == 'failure' && '⚠️ Please check the logs for more details!' || '' }}
