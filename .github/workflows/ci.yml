@@ -1,4 +1,4 @@
-name: CI
+name: CI Pipeline
 
 on:
   push:
@@ -9,304 +9,44 @@ on:
 env:
   BACKEND_DIR: backend/recipe-service
   FRONTEND_DIR: frontend/recipe
+  YC_REGISTRY_ID: crpogsfdi7ukhk7uooeg
 
 jobs:
   # ЭТАП 1: Тесты Backend
   backend-test:
-    name: Backend - Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.1
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5.0.0
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Run backend tests
-        run: mvn test
-        working-directory: ${{ env.BACKEND_DIR }}
-        env:
-          TESTCONTAINERS_RYUK_DISABLED: "true"
-
-      - name: Upload JaCoCo coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: ${{ env.BACKEND_DIR }}/target/site/jacoco/
-          retention-days: 1
+    uses: ./.github/workflows/reusable/backend-test.yml
 
   # ЭТАП 2: Сборка Backend
   backend-build:
-    name: Backend - Build
-    runs-on: ubuntu-latest
     needs: backend-test
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.1
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Build backend
-        run: mvn clean package -DskipTests
-        working-directory: ${{ env.BACKEND_DIR }}
-
-      - name: Upload backend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-jar
-          path: ${{ env.BACKEND_DIR }}/target/*.jar
-          retention-days: 1
-
+    uses: ./.github/workflows/reusable/backend-build.yml
 
   # ЭТАП 3: Тесты Frontend
   frontend-test:
-    name: Frontend - Test
-    runs-on: ubuntu-latest
     needs: backend-build
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.1
-
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
-
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.FRONTEND_DIR }}/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ${{ env.FRONTEND_DIR }}
-
-      - name: Run frontend tests with coverage
-        run: npm run test
-        working-directory: ${{ env.FRONTEND_DIR }}
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage
-          path: ${{ env.FRONTEND_DIR }}/coverage/
-          retention-days: 1
-
+    uses: ./.github/workflows/reusable/frontend-test.yml
 
   # ЭТАП 4: Сборка Frontend
   frontend-build:
-    name: Frontend - Build
-    runs-on: ubuntu-latest
     needs: frontend-test
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.1
+    uses: ./.github/workflows/reusable/frontend-build.yml
 
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
-
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.FRONTEND_DIR }}/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ${{ env.FRONTEND_DIR }}
-
-      - name: Type check
-        run: npm run type-check
-        working-directory: ${{ env.FRONTEND_DIR }}
-
-      - name: Build frontend
-        run: npm run build-only
-        working-directory: ${{ env.FRONTEND_DIR }}
-
-  # ЭТАП 5: SonarQube Security Scan (ПОСЛЕ БИЛДОВ!)
+  # ЭТАП 5: SonarQube
   sonarqube-scan:
-    name: SonarQube - Security Scan
-    runs-on: ubuntu-latest
     needs: frontend-build
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.1
-        with:
-          fetch-depth: 0
+    uses: ./.github/workflows/reusable/sonarqube-scan.yml
+    secrets: inherit
 
-      - name: Download JaCoCo report
-        uses: actions/download-artifact@v8.0.1
-        with:
-          name: jacoco-report
-          path: ${{ env.BACKEND_DIR }}/target/site/jacoco/
-
-      - name: Download frontend coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-coverage
-          path: ${{ env.FRONTEND_DIR }}/coverage/
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Compile Java sources (for SonarQube)
-        run: mvn compile test-compile -DskipTests
-        working-directory: ${{ env.BACKEND_DIR }}
-
-      - name: Cache SonarQube packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v4
-        env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
-        with:
-          args: >
-            -Dsonar.qualitygate.wait=true
-            -Dsonar.qualitygate.timeout=300
-
-      - name: SonarQube Quality Gate check
-        id: sonarqube-quality-gate-check
-        uses: SonarSource/sonarqube-quality-gate-action@v1
-        timeout-minutes: 5
-        env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Fail if Quality Gate failed
-        if: steps.sonarqube-quality-gate-check.outputs.quality-gate-status != 'PASSED'
-        run: |
-          echo "❌ SonarQube Quality Gate failed!"
-          echo "Check the report: ${{ secrets.SONAR_HOST_URL }}/dashboard?id=${{ secrets.SONAR_PROJECT_KEY }}"
-          exit 1
-
-  # ЭТАП 6: Docker Build & Push (ТОЛЬКО ЕСЛИ SONARQUBE ПРОШЕЛ!)
-  docker-build-push-backend:
-    name: Docker - Build and Push Backend
-    runs-on: ubuntu-latest
+  # ЭТАП 6: Docker Backend
+  docker-backend:
     needs: sonarqube-scan
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    permissions:
-      contents: read
-    env:
-      YC_REGISTRY_ID: ${{ secrets.YC_REGISTRY_ID }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.1
+    uses: ./.github/workflows/reusable/docker-backend.yml
+    secrets: inherit
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Yandex Cloud Container Registry
-        uses: yc-actions/yc-cr-login@v1
-        with:
-          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: cr.yandex/${{ env.YC_REGISTRY_ID }}/recipe-backend
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: backend/recipe-service
-          file: backend/recipe-service/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  docker-build-push-frontend:
-    name: Docker - Build and Push Frontend
-    runs-on: ubuntu-latest
-    needs: docker-build-push-backend
+  # ЭТАП 7: Docker Frontend
+  docker-frontend:
+    needs: docker-backend
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    permissions:
-      contents: read
-    env:
-      YC_REGISTRY_ID: ${{ secrets.YC_REGISTRY_ID }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.1
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Yandex Cloud Container Registry
-        uses: yc-actions/yc-cr-login@v1
-        with:
-          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: cr.yandex/${{ env.YC_REGISTRY_ID }}/recipe-frontend
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: frontend/recipe
-          file: frontend/recipe/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+    uses: ./.github/workflows/reusable/docker-frontend.yml
+    secrets: inherit

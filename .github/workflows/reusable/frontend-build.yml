@@ -1,0 +1,39 @@
+name: Frontend Build
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Frontend - Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.1
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/recipe/package-lock.json
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/recipe/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend/recipe
+
+      - name: Type check
+        run: npm run type-check
+        working-directory: frontend/recipe
+
+      - name: Build frontend
+        run: npm run build-only
+        working-directory: frontend/recipe
