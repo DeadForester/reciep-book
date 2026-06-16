@@ -142,7 +142,7 @@ jobs:
   docker-build-push-backend:
     name: Docker - Build and Push Backend
     runs-on: ubuntu-latest
-    needs: backend-build
+    needs: frontend-build
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     permissions:
       contents: read
