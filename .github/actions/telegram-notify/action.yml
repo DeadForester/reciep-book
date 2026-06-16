@@ -3,11 +3,15 @@ description: Send GitHub Actions notification to Telegram
 
 inputs:
   job-name:
-    description: Name of the completed job
     required: true
 
   status:
-    description: Job status
+    required: true
+
+  telegram-token:
+    required: true
+
+  telegram-chat-id:
     required: true
 
 runs:
