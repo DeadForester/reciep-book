@@ -11,15 +11,23 @@ on:
       - "SonarQube Scan"
       - "Docker Backend"
       - "Docker Frontend"
-      - "Update Kubernetes Manifests"
     types:
       - completed
 
 jobs:
   send-telegram-notification:
     runs-on: ubuntu-latest
-    if: always()  # Отправлять уведомление даже при ошибке
+    if: always()
     steps:
+      - name: Get workflow info
+        id: workflow
+        run: |
+          echo "name=${{ github.event.workflow_run.name }}" >> $GITHUB_OUTPUT
+          echo "conclusion=${{ github.event.workflow_run.conclusion }}" >> $GITHUB_OUTPUT
+          echo "branch=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_OUTPUT
+          echo "sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          echo "url=${{ github.event.workflow_run.html_url }}" >> $GITHUB_OUTPUT
+
       - name: Send Telegram Notification
         uses: appleboy/telegram-action@master
         with:
@@ -27,20 +35,17 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
           message: |
-            🚀 *CI/CD Pipeline Status*
+            ${{ steps.workflow.outputs.conclusion == 'success' && '✅' || '❌' }} *${{ steps.workflow.outputs.name }}*
 
-            📦 *Repository:* ${{ github.repository }}
-            🔄 *Workflow:* ${{ github.workflow }}
-            🏷️ *Branch:* ${{ github.ref_name }}
-            📝 *Commit:* [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-
-            ⏱️ *Status:* ${{ github.event.workflow_run.conclusion == 'success' && '✅ SUCCESS' || '❌ FAILED' }}
-
-            👤 *Author:* ${{ github.actor }}
-            📊 *Run ID:* ${{ github.run_id }}
-
-            🔗 [View Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-
-            📅 *Time:* ${{ github.event.workflow_run.created_at }}
-
-            ${{ github.event.workflow_run.conclusion == 'failure' && '⚠️ Please check the logs for more details!' || '' }}
+            📦 Repository: ${{ github.repository }}
+            🏷️ Branch: ${{ steps.workflow.outputs.branch }}
+            📝 Commit: [${{ steps.workflow.outputs.sha }}](https://github.com/${{ github.repository }}/commit/${{ steps.workflow.outputs.sha }})
+            
+            ⏱️ Status: ${{ steps.workflow.outputs.conclusion == 'success' && '✅ SUCCESS' || '❌ FAILED' }}
+            👤 Author: ${{ github.actor }}
+            
+            🔗 [View Logs](${{ steps.workflow.outputs.url }})
+            
+            📅 Time: ${{ github.event.workflow_run.created_at }}
+            
+            ${{ steps.workflow.outputs.conclusion == 'failure' && '⚠️ Please check the logs for more details!' || '' }}
