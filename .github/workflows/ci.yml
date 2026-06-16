@@ -14,39 +14,39 @@ env:
 jobs:
   # ЭТАП 1: Тесты Backend
   backend-test:
-    uses: ./.github/workflows/reusable/backend-test.yml
+    uses: ./.github/workflows/backend-test.yml
 
   # ЭТАП 2: Сборка Backend
   backend-build:
     needs: backend-test
-    uses: ./.github/workflows/reusable/backend-build.yml
+    uses: ./.github/workflows/backend-build.yml
 
   # ЭТАП 3: Тесты Frontend
   frontend-test:
     needs: backend-build
-    uses: ./.github/workflows/reusable/frontend-test.yml
+    uses: ./.github/workflows/frontend-test.yml
 
   # ЭТАП 4: Сборка Frontend
   frontend-build:
     needs: frontend-test
-    uses: ./.github/workflows/reusable/frontend-build.yml
+    uses: ./.github/workflows/frontend-build.yml
 
   # ЭТАП 5: SonarQube
   sonarqube-scan:
     needs: frontend-build
-    uses: ./.github/workflows/reusable/sonarqube-scan.yml
+    uses: ./.github/workflows/sonarqube-scan.yml
     secrets: inherit
 
   # ЭТАП 6: Docker Backend
   docker-backend:
     needs: sonarqube-scan
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    uses: ./.github/workflows/reusable/docker-backend.yml
+    uses: ./.github/workflows/docker-backend.yml
     secrets: inherit
 
   # ЭТАП 7: Docker Frontend
   docker-frontend:
     needs: docker-backend
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    uses: ./.github/workflows/reusable/docker-frontend.yml
+    uses: ./.github/workflows/docker-frontend.yml
     secrets: inherit
