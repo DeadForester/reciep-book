@@ -267,7 +267,7 @@ jobs:
   docker-build-push-frontend:
     name: Docker - Build and Push Frontend
     runs-on: ubuntu-latest
-    needs: sonarqube-scan
+    needs: docker-build-push-backend
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     permissions:
       contents: read
