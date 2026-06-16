@@ -1,31 +1,54 @@
-run: |
-  case "${{ inputs.status }}" in
-    success)
-      ICON="✅"
-      TEXT="SUCCESS"
-      ;;
-    failure)
-      ICON="❌"
-      TEXT="FAILED"
-      ;;
-    cancelled)
-      ICON="⛔"
-      TEXT="CANCELLED"
-      ;;
-    skipped)
-      ICON="⏭"
-      TEXT="SKIPPED"
-      ;;
-    *)
-      ICON="❓"
-      TEXT="${{ inputs.status }}"
-      ;;
-  esac
+name: Telegram Notify
+description: Send GitHub Actions notification to Telegram
 
-  MESSAGE=$(cat <<EOF
+inputs:
+  job-name:
+    description: Name of the completed job
+    required: true
+
+  status:
+    description: Job status
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - name: Send Telegram notification
+      shell: bash
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ env.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ env.TELEGRAM_CHAT_ID }}
+        JOB_NAME: ${{ inputs.job-name }}
+        JOB_STATUS: ${{ inputs.status }}
+      run: |
+        case "$JOB_STATUS" in
+          success)
+            ICON="✅"
+            TEXT="SUCCESS"
+            ;;
+          failure)
+            ICON="❌"
+            TEXT="FAILED"
+            ;;
+          cancelled)
+            ICON="⛔"
+            TEXT="CANCELLED"
+            ;;
+          skipped)
+            ICON="⏭️"
+            TEXT="SKIPPED"
+            ;;
+          *)
+            ICON="❓"
+            TEXT="$JOB_STATUS"
+            ;;
+        esac
+
+        MESSAGE=$(cat <<EOF
   🚀 GitHub Actions
   
-  ${ICON} ${{ inputs.job-name }}
+  ${ICON} ${JOB_NAME}
 
 Status: ${TEXT}
 
@@ -44,7 +67,7 @@ Status: ${TEXT}
   🔗 https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
   EOF
   )
-
+  
   curl -s \
   -X POST \
   "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
