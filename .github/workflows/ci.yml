@@ -141,7 +141,7 @@ jobs:
 
   docker-push-backend:
     name: Docker push backend
-    needs: backend-build
+    needs: frontend-build
     uses: ./.github/workflows/docker-push.yml
     with:
       service-name: recipe-backend
@@ -151,9 +151,7 @@ jobs:
 
   docker-push-frontend:
     name: Docker push frontend
-    needs:
-      - frontend-build
-      - docker-push-backend
+    needs: docker-push-backend
     uses: ./.github/workflows/docker-push.yml
     with:
       service-name: recipe-frontend
