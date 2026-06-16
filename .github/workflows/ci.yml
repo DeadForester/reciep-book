@@ -187,6 +187,11 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+          cache: maven
+
+      - name: Compile Java sources (for SonarQube)
+        run: mvn compile test-compile -DskipTests
+        working-directory: ${{ env.BACKEND_DIR }}
 
       - name: Cache SonarQube packages
         uses: actions/cache@v4
