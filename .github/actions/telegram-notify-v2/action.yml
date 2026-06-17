@@ -4,13 +4,10 @@ description: Send GitHub Actions notification to Telegram
 inputs:
   job-name:
     required: true
-
   status:
     required: true
-
   telegram-token:
     required: true
-
   telegram-chat-id:
     required: true
 
@@ -34,33 +31,16 @@ runs:
         }
 
         case "${{ inputs.status }}" in
-          success)
-            ICON="✅"
-            TEXT="SUCCESS"
-            ;;
-          failure)
-            ICON="❌"
-            TEXT="FAILED"
-            ;;
-          cancelled)
-            ICON="⛔"
-            TEXT="CANCELLED"
-            ;;
-          skipped)
-            ICON="⏭"
-            TEXT="SKIPPED"
-            ;;
-          *)
-            ICON="❓"
-            TEXT="${{ inputs.status }}"
-            ;;
+          success)   ICON="✅"; TEXT="SUCCESS" ;;
+          failure)   ICON="❌"; TEXT="FAILED" ;;
+          cancelled) ICON="⛔"; TEXT="CANCELLED" ;;
+          skipped)   ICON="⏭"; TEXT="SKIPPED" ;;
+          *)         ICON="❓"; TEXT="${{ inputs.status }}" ;;
         esac
         
-        # 1. Получаем сообщение коммита (первую строку) и ограничиваем длину до 100 символов
         COMMIT_MSG=$(git log -1 --pretty=%s 2>/dev/null || echo "Неизвестно")
         COMMIT_MSG="${COMMIT_MSG:0:100}"
         
-        # 2. Экранируем переменные для безопасной HTML-разметки в Telegram
         COMMIT_MSG=$(escape_html "$COMMIT_MSG")
         WORKFLOW_NAME=$(escape_html "${GITHUB_WORKFLOW}")
         REPO_NAME=$(escape_html "${GITHUB_REPOSITORY}")
@@ -69,34 +49,25 @@ runs:
         ACTOR_NAME=$(escape_html "${GITHUB_ACTOR}")
         JOB_NAME_ESC=$(escape_html "${JOB_NAME}")
         
-        # 3. Короткий хеш коммита (первые 7 символов)
         SHORT_SHA="${GITHUB_SHA:0:7}"
         
-        # 4. Формируем ссылки (с учетом возможного GitHub Enterprise)
-        # GITHUB_JOB содержит ID текущей джобы, что позволяет дать ссылку именно на неё
         JOB_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/job/${GITHUB_JOB}"
         RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
         
-        # 5. Формируем красивое сообщение с HTML-разметкой
-        # (Обратите внимание: убраны лишние отступы в начале строк, которые были в оригинале)
-        MESSAGE="🚀 <b>GitHub Actions</b>
-  
-        ${ICON} <b>${TEXT}</b> | <code>${JOB_NAME_ESC}</code>
-  
-        🔄 <b>Workflow:</b> ${WORKFLOW_NAME}
-        📦 <b>Repository:</b> ${REPO_NAME}
-        🌿 <b>Branch:</b> ${BRANCH_NAME}
-        🎯 <b>Event:</b> ${EVENT_NAME}
-        👤 <b>Author:</b> ${ACTOR_NAME}
-        🔑 <b>Commit:</b> <code>${SHORT_SHA}</code> - ${COMMIT_MSG}
-  
-        🔗 <a href=\"${JOB_URL}\">👁 View Job Logs</a>
-        🔗 <a href=\"${RUN_URL}\">👁 View Workflow Run</a>"
-
-  # 6. Отправляем запрос с указанием parse_mode=HTML
+        MESSAGE="🚀 <b>GitHub Actions</b>"
+        MESSAGE="${MESSAGE}\n\n${ICON} <b>${TEXT}</b> | <code>${JOB_NAME_ESC}</code>"
+        MESSAGE="${MESSAGE}\n\n🔄 <b>Workflow:</b> ${WORKFLOW_NAME}"
+        MESSAGE="${MESSAGE}\n📦 <b>Repository:</b> ${REPO_NAME}"
+        MESSAGE="${MESSAGE}\n🌿 <b>Branch:</b> ${BRANCH_NAME}"
+        MESSAGE="${MESSAGE}\n🎯 <b>Event:</b> ${EVENT_NAME}"
+        MESSAGE="${MESSAGE}\n👤 <b>Author:</b> ${ACTOR_NAME}"
+        MESSAGE="${MESSAGE}\n🔑 <b>Commit:</b> <code>${SHORT_SHA}</code> - ${COMMIT_MSG}"
+        MESSAGE="${MESSAGE}\n\n🔗 <a href=\"${JOB_URL}\">👁 View Job Logs</a>"
+        MESSAGE="${MESSAGE}\n🔗 <a href=\"${RUN_URL}\">👁 View Workflow Run</a>"
+        
         curl -s \
-        -X POST \
-        "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-        -d chat_id="${TELEGRAM_CHAT_ID}" \
-        -d parse_mode="HTML" \
-        -data-urlencode text="$MESSAGE"
+          -X POST \
+          "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          -d chat_id="${TELEGRAM_CHAT_ID}" \
+          -d parse_mode="HTML" \
+          --data-urlencode text="$(echo -e "$MESSAGE")"
