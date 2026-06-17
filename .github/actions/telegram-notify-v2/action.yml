@@ -107,7 +107,6 @@ runs:
           MESSAGE="${MESSAGE}\n⏱ <b>Duration:</b> ${DURATION}"
         fi
         
-        MESSAGE="${MESSAGE}\n\n🔗 <a href=\"${JOB_HTML_URL}\">👁 View Job Logs</a>"
         MESSAGE="${MESSAGE}\n🔗 <a href=\"${RUN_URL}\">👁 View Workflow Run</a>"
         
         curl -s \
