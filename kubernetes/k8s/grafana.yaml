@@ -28,6 +28,7 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: grafana-pvc
+
 ---
 apiVersion: v1
 kind: Service
