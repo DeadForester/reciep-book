@@ -20,7 +20,7 @@ runs:
         JOB_STATUS: ${{ inputs.status }}
         TELEGRAM_BOT_TOKEN: ${{ inputs.telegram-token }}
         TELEGRAM_CHAT_ID: ${{ inputs.telegram-chat-id }}
-
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         escape_html() {
           local s="$1"
@@ -30,11 +30,26 @@ runs:
           echo "$s"
         }
 
+        format_duration() {
+          local seconds=$1
+          local hours=$((seconds / 3600))
+          local minutes=$(( (seconds % 3600) / 60 ))
+          local secs=$((seconds % 60))
+        
+          if [ $hours -gt 0 ]; then
+            printf "%dh %dm %ds" $hours $minutes $secs
+          elif [ $minutes -gt 0 ]; then
+            printf "%dm %ds" $minutes $secs
+          else
+            printf "%ds" $secs
+          fi
+        }
+
         case "${{ inputs.status }}" in
-          success)   ICON="✅"; TEXT="SUCCESS" ;;
-          failure)   ICON="❌"; TEXT="FAILED" ;;
-          cancelled) ICON="⛔"; TEXT="CANCELLED" ;;
-          skipped)   ICON="⏭"; TEXT="SKIPPED" ;;
+          success)   ICON="✅"; TEXT="УСПЕШНО" ;;
+          failure)   ICON="❌"; TEXT="ОШИБКА" ;;
+          cancelled) ICON="🛑"; TEXT="ОСТАНОВЛЕНО ВРУЧНУЮ" ;;
+          skipped)   ICON="⏭"; TEXT="ПРОПУЩЕНО" ;;
           *)         ICON="❓"; TEXT="${{ inputs.status }}" ;;
         esac
         
@@ -51,8 +66,33 @@ runs:
         
         SHORT_SHA="${GITHUB_SHA:0:7}"
         
-        JOB_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/job/${GITHUB_JOB}"
         RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        
+        JOBS_JSON=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs")
+        
+        JOB_HTML_URL=$(echo "$JOBS_JSON" | jq -r --arg name "${GITHUB_JOB}" '.jobs[] | select(.name | startswith($name)) | .html_url' | head -n 1)
+        
+        DURATION=""
+        if [[ "${{ inputs.status }}" == "cancelled" || "${{ inputs.status }}" == "failure" || "${{ inputs.status }}" == "success" ]]; then
+          STARTED_AT=$(echo "$JOBS_JSON" | jq -r --arg name "${GITHUB_JOB}" '.jobs[] | select(.name | startswith($name)) | .started_at' | head -n 1)
+          COMPLETED_AT=$(echo "$JOBS_JSON" | jq -r --arg name "${GITHUB_JOB}" '.jobs[] | select(.name | startswith($name)) | .completed_at' | head -n 1)
+        
+          if [ -n "$STARTED_AT" ] && [ "$STARTED_AT" != "null" ] && [ -n "$COMPLETED_AT" ] && [ "$COMPLETED_AT" != "null" ]; then
+            START_TS=$(date -d "$STARTED_AT" +%s 2>/dev/null || echo "")
+            END_TS=$(date -d "$COMPLETED_AT" +%s 2>/dev/null || echo "")
+        
+            if [ -n "$START_TS" ] && [ -n "$END_TS" ]; then
+              DURATION_SEC=$((END_TS - START_TS))
+              DURATION=$(format_duration $DURATION_SEC)
+            fi
+          fi
+        fi
+        
+        if [ -z "$JOB_HTML_URL" ] || [ "$JOB_HTML_URL" = "null" ]; then
+          JOB_HTML_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/job/${GITHUB_JOB}"
+        fi
         
         MESSAGE="🚀 <b>GitHub Actions</b>"
         MESSAGE="${MESSAGE}\n\n${ICON} <b>${TEXT}</b> | <code>${JOB_NAME_ESC}</code>"
@@ -62,7 +102,12 @@ runs:
         MESSAGE="${MESSAGE}\n🎯 <b>Event:</b> ${EVENT_NAME}"
         MESSAGE="${MESSAGE}\n👤 <b>Author:</b> ${ACTOR_NAME}"
         MESSAGE="${MESSAGE}\n🔑 <b>Commit:</b> <code>${SHORT_SHA}</code> - ${COMMIT_MSG}"
-        MESSAGE="${MESSAGE}\n\n🔗 <a href=\"${JOB_URL}\">👁 View Job Logs</a>"
+        
+        if [ -n "$DURATION" ]; then
+          MESSAGE="${MESSAGE}\n⏱ <b>Duration:</b> ${DURATION}"
+        fi
+        
+        MESSAGE="${MESSAGE}\n\n🔗 <a href=\"${JOB_HTML_URL}\">👁 View Job Logs</a>"
         MESSAGE="${MESSAGE}\n🔗 <a href=\"${RUN_URL}\">👁 View Workflow Run</a>"
         
         curl -s \

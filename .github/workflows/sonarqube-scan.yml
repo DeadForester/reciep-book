@@ -78,7 +78,7 @@ jobs:
         if: always()
         uses: ./.github/actions/telegram-notify-v2
         with:
-          job-name: Frontend Tests
+          job-name: SonarQube Scan
           status: ${{ job.status }}
           telegram-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           telegram-chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
