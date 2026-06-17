@@ -1,24 +1,3 @@
-# ConfigMap с конфигурацией
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-config
-  namespace: monitoring
-data:
-  prometheus.yml: |
-    global:
-      scrape_interval: 15s
-    scrape_configs:
-      - job_name: 'recipe-backend'
-        metrics_path: '/actuator/prometheus'
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_app]
-            regex: recipe-backend
-            action: keep
----
-# Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,28 +13,44 @@ spec:
       labels:
         app: prometheus
     spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
       containers:
         - name: prometheus
           image: prom/prometheus:latest
-          args:
-            - "--config.file=/etc/prometheus/prometheus.yml"
-            - "--storage.tsdb.path=/prometheus"
           ports:
             - containerPort: 9090
+          args:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+            - '--web.console.templates=/usr/share/prometheus/consoles'
+            - '--web.enable-lifecycle'
           volumeMounts:
-            - name: config
-              mountPath: /etc/prometheus
             - name: data
               mountPath: /prometheus
+            - name: config
+              mountPath: /etc/prometheus
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
       volumes:
-        - name: config
-          configMap:
-            name: prometheus-config
         - name: data
           persistentVolumeClaim:
             claimName: prometheus-pvc
+        - name: config
+          configMap:
+            name: prometheus-config
 ---
-# Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -67,8 +62,8 @@ spec:
   ports:
     - port: 9090
       targetPort: 9090
+  type: ClusterIP
 ---
-# PVC для данных
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
